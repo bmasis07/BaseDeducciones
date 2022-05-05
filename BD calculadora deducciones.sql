@@ -181,12 +181,20 @@ CREATE TABLE CALCULO_DEDUCCION(
     FOREIGN KEY (id_valores_deduccion) REFERENCES VALORES_DEDUCCION(id_valores_deduccion)
 );
 
+SELECT  * FROM EMPLEADOS WHERE id_empleado = 8;
 
+DELIMITER //
+CREATE PROCEDURE SP_CalcularPlanilla ()
+BEGIN
+	SELECT * FROM VALORES_DEDUCCION;
+END //
 
+CALL SP_CalcularPlanilla();
 
+select @var := salario_actual, @var2 := cedula
+FROM EMPLEADOS WHERE id_empleado = 8;
 
-
-
+select @var as var, @var2 as var2
 
 
 
