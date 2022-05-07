@@ -1,4 +1,9 @@
 
+
+
+/*---------------------------------------------------------------------------------------------------------------*/ 
+/*----------------------------------- CREACIÓN Y LLENADO DE DATOS DE LA BASE-------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------*/ 
 CREATE SCHEMA calculadora_deducciones;
 
 USE calculadora_deducciones;
@@ -182,24 +187,36 @@ CREATE TABLE CALCULO_DEDUCCION(
 );
 
 
+/*---------------------------------------------------------------------------------------------------------------*/ 
+/*----------------------------------- PROCEDIMIENTOS DE CÁLCULO DE PLANILLA -------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------*/ 
 
 DELIMITER //
 CREATE PROCEDURE SP_CalcularPlanilla ()
 BEGIN
     
 	SELECT 
-		@id_valores_deduccion := valores.id_valores_deduccion,
-		@ccss_patronal := deduccion_patronal.ccss,
-		@aguinaldo := ROUND(deduccion_patronal.aguinaldo,2),
-		@cesantia := ROUND(deduccion_patronal.cesantia,2),
-		@vacaciones := ROUND(deduccion_patronal.vacaciones,2),
-		@riesgos_trabajo_ins := deduccion_patronal.riesgos_trabajo_ins,
-		@ccss_obrero := deduccion_obrero.ccss,
-		@banco_popular := deduccion_obrero.banco_popular
-    FROM VALORES_DEDUCCION valores
-    INNER JOIN VALORES_DEDUCCION_OBRERO deduccion_obrero ON deduccion_obrero.id_valores_deduccion_obrero = valores.id_valores_deduccion_obrero
-    INNER JOIN VALORES_DEDUCCION_PATRONAL deduccion_patronal ON deduccion_patronal.id_valores_deduccion_patronal = valores.id_valores_deduccion_patronal
-    WHERE valores.vigente = 1;
+				valores.id_valores_deduccion,
+				deduccion_patronal.ccss,
+				ROUND(deduccion_patronal.aguinaldo,2),
+				ROUND(deduccion_patronal.cesantia,2),
+				ROUND(deduccion_patronal.vacaciones,2),
+				deduccion_patronal.riesgos_trabajo_ins,
+				deduccion_obrero.ccss,
+				deduccion_obrero.banco_popular
+		INTO
+				@id_valores_deduccion,
+                @ccss_patronal,
+                @aguinaldo,
+                @cesantia,
+                @vacaciones,
+                @riesgos_trabajo_ins,
+                @ccss_obrero,
+                @banco_popular
+		FROM VALORES_DEDUCCION valores
+		INNER JOIN VALORES_DEDUCCION_OBRERO deduccion_obrero ON deduccion_obrero.id_valores_deduccion_obrero = valores.id_valores_deduccion_obrero
+		INNER JOIN VALORES_DEDUCCION_PATRONAL deduccion_patronal ON deduccion_patronal.id_valores_deduccion_patronal = valores.id_valores_deduccion_patronal
+		WHERE valores.vigente = 1;
 	
     SET @total_deducciones_obrero = @ccss_obrero + @banco_popular;
     SET @total_deducciones_patronales = ROUND(@ccss_patronal + @aguinaldo + @cesantia + @vacaciones + @riesgos_trabajo_ins,2);
@@ -225,10 +242,6 @@ BEGIN
     WHERE emp.empleado_activo = 1;
 
 END //
-
-CALL SP_CalcularPlanilla();
-/*DROP PROCEDURE SP_CalcularPlanilla;*/
-
 
 
 DELIMITER //
@@ -265,7 +278,7 @@ BEGIN
         ELSEIF salario > v_izquierda AND (salario <= v_derecha OR ISNULL(v_derecha)) THEN
 			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
 		ELSEIF salario > v_derecha THEN
-			SET impuesto_linea = v_derecha * (v_porcentaje / 100);
+			SET impuesto_linea = (v_derecha-v_izquierda) * (v_porcentaje / 100);
         END IF;
         
         SET impuesto_total = impuesto_total + impuesto_linea;
@@ -277,11 +290,12 @@ BEGIN
     RETURN impuesto_total;
 END//
 
-SELECT FN_CalcularImpuestoRenta(1200000);
-DROP FUNCTION FN_CalcularImpuestoRenta;
+SELECT FN_CalcularImpuestoRenta(11658757);
 
 
 
+CALL SP_CalcularPlanilla();
+SELECT cOUNT(*) FROM CALCULO_DEDUCCION;
 
 
 
