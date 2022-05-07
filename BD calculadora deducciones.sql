@@ -275,13 +275,17 @@ BEGIN
         SET impuesto_linea = 0;
         IF salario > v_izquierda AND ISNULL(v_derecha) = 1 THEN
 			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
+			SET impuesto_total = impuesto_total + impuesto_linea;
+            LEAVE get_rangos;
         ELSEIF salario > v_izquierda AND (salario <= v_derecha OR ISNULL(v_derecha)) THEN
 			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
+            SET impuesto_total = impuesto_total + impuesto_linea;
+            LEAVE get_rangos;
 		ELSEIF salario > v_derecha THEN
 			SET impuesto_linea = (v_derecha-v_izquierda) * (v_porcentaje / 100);
+            SET impuesto_total = impuesto_total + impuesto_linea;
         END IF;
         
-        SET impuesto_total = impuesto_total + impuesto_linea;
         
 	  END LOOP get_rangos;
 
@@ -290,13 +294,19 @@ BEGIN
     RETURN impuesto_total;
 END//
 
-SELECT FN_CalcularImpuestoRenta(11658757);
+
+SELECT FN_CalcularImpuestoRenta(5000000);
+DROP FUNCTION FN_CalcularImpuestoRenta
 
 
 
 CALL SP_CalcularPlanilla();
-SELECT cOUNT(*) FROM CALCULO_DEDUCCION;
+SELECT * FROM CALCULO_DEDUCCION;
 
+
+/*---------------------------------------------------------------------------------------------------------------*/ 
+/*--------------- SCRIPT PARA CONSULTAR EL PESO DESPUÉS DEL CALCULO DE LA PLANILLA ------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------*/ 
 
 
 SELECT TABLE_NAME AS `Table`,
