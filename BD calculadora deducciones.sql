@@ -181,20 +181,104 @@ CREATE TABLE CALCULO_DEDUCCION(
     FOREIGN KEY (id_valores_deduccion) REFERENCES VALORES_DEDUCCION(id_valores_deduccion)
 );
 
-SELECT  * FROM EMPLEADOS WHERE id_empleado = 8;
+
 
 DELIMITER //
 CREATE PROCEDURE SP_CalcularPlanilla ()
 BEGIN
-	SELECT * FROM VALORES_DEDUCCION;
+    
+	SELECT 
+		@id_valores_deduccion := valores.id_valores_deduccion,
+		@ccss_patronal := deduccion_patronal.ccss,
+		@aguinaldo := ROUND(deduccion_patronal.aguinaldo,2),
+		@cesantia := ROUND(deduccion_patronal.cesantia,2),
+		@vacaciones := ROUND(deduccion_patronal.vacaciones,2),
+		@riesgos_trabajo_ins := deduccion_patronal.riesgos_trabajo_ins,
+		@ccss_obrero := deduccion_obrero.ccss,
+		@banco_popular := deduccion_obrero.banco_popular
+    FROM VALORES_DEDUCCION valores
+    INNER JOIN VALORES_DEDUCCION_OBRERO deduccion_obrero ON deduccion_obrero.id_valores_deduccion_obrero = valores.id_valores_deduccion_obrero
+    INNER JOIN VALORES_DEDUCCION_PATRONAL deduccion_patronal ON deduccion_patronal.id_valores_deduccion_patronal = valores.id_valores_deduccion_patronal
+    WHERE valores.vigente = 1;
+	
+    SET @total_deducciones_obrero = @ccss_obrero + @banco_popular;
+    SET @total_deducciones_patronales = ROUND(@ccss_patronal + @aguinaldo + @cesantia + @vacaciones + @riesgos_trabajo_ins,2);
+    
+    
+    INSERT INTO CALCULO_DEDUCCION(id_empleado,
+								id_valores_deduccion,
+								salario_base,
+								deduccion_obrero,
+								deduccion_patronal,
+								impuesto_de_renta,
+								contribucion_asociacion_solidarista,
+								fecha_calculado)
+	SELECT emp.id_empleado
+			,@id_valores_deduccion
+            ,emp.salario_actual
+            ,(emp.salario_actual * (@total_deducciones_obrero/ 100))
+            ,(emp.salario_actual * (@total_deducciones_patronales/ 100))
+            ,FN_CalcularImpuestoRenta(emp.salario_actual)
+            ,(emp.salario_actual * (emp.porcentaje_asociacion / 100))
+            ,CAST(NOW() AS DATE)
+    FROM EMPLEADOS emp
+    WHERE emp.empleado_activo = 1;
+
 END //
 
 CALL SP_CalcularPlanilla();
+/*DROP PROCEDURE SP_CalcularPlanilla;*/
 
-select @var := salario_actual, @var2 := cedula
-FROM EMPLEADOS WHERE id_empleado = 8;
 
-select @var as var, @var2 as var2
+
+DELIMITER //
+CREATE FUNCTION FN_CalcularImpuestoRenta(salario DOUBLE) 
+RETURNS DOUBLE
+BEGIN
+	DECLARE impuesto_linea DOUBLE;
+	DECLARE impuesto_total DOUBLE DEFAULT 0;
+    
+	  DECLARE v_izquierda MEDIUMINT;
+	  DECLARE v_derecha MEDIUMINT;
+	  DECLARE v_porcentaje TINYINT;
+      
+	  DECLARE fin INTEGER DEFAULT 0;
+
+
+	  DECLARE rangos_cursor CURSOR FOR
+		SELECT extremo_izquierdo, extremo_derecho, porcentaje
+        FROM CONFIGURACION_RANGO_SALARIO_IMPUESTO_RENTA
+		ORDER BY orden;
+
+
+	  DECLARE CONTINUE HANDLER FOR NOT FOUND SET fin = 4;
+
+	  OPEN rangos_cursor;
+	  get_rangos: LOOP
+		FETCH rangos_cursor INTO v_izquierda, v_derecha, v_porcentaje;
+		IF fin = 4 THEN
+            LEAVE get_rangos;
+		END IF;
+        SET impuesto_linea = 0;
+        IF salario > v_izquierda AND ISNULL(v_derecha) = 1 THEN
+			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
+        ELSEIF salario > v_izquierda AND (salario <= v_derecha OR ISNULL(v_derecha)) THEN
+			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
+		ELSEIF salario > v_derecha THEN
+			SET impuesto_linea = v_derecha * (v_porcentaje / 100);
+        END IF;
+        
+        SET impuesto_total = impuesto_total + impuesto_linea;
+        
+	  END LOOP get_rangos;
+
+	  CLOSE rangos_cursor;
+      
+    RETURN impuesto_total;
+END//
+
+SELECT FN_CalcularImpuestoRenta(1200000);
+DROP FUNCTION FN_CalcularImpuestoRenta;
 
 
 
