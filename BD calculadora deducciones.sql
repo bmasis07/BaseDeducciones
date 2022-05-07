@@ -164,10 +164,8 @@ CREATE TABLE VALORES_DEDUCCION(
     FOREIGN KEY (id_valores_deduccion_patronal) REFERENCES VALORES_DEDUCCION_PATRONAL(id_valores_deduccion_patronal)
 );
 
-
 INSERT INTO VALORES_DEDUCCION(id_valores_deduccion_obrero, id_valores_deduccion_patronal, vigente, fecha_vigencia)
 VALUES(1 , 1, 1, CAST(NOW() AS DATE));
-
 
 
 DROP TABLE CALCULO_DEDUCCION;
@@ -273,11 +271,7 @@ BEGIN
             LEAVE get_rangos;
 		END IF;
         SET impuesto_linea = 0;
-        IF salario > v_izquierda AND ISNULL(v_derecha) = 1 THEN
-			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
-			SET impuesto_total = impuesto_total + impuesto_linea;
-            LEAVE get_rangos;
-        ELSEIF salario > v_izquierda AND (salario <= v_derecha OR ISNULL(v_derecha)) THEN
+        IF salario > v_izquierda AND (salario <= v_derecha OR ISNULL(v_derecha)) THEN
 			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
             SET impuesto_total = impuesto_total + impuesto_linea;
             LEAVE get_rangos;

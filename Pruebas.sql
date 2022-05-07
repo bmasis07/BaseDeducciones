@@ -30,12 +30,7 @@ BEGIN
             LEAVE get_rangos;
 		END IF;
         SET impuesto_linea = 0;
-        IF salario > v_izquierda AND ISNULL(v_derecha) = 1 THEN
-			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
-			SET impuesto_total = impuesto_total + impuesto_linea;
-			select fin as contador, impuesto_linea as linea, impuesto_total as total;
-            LEAVE get_rangos;
-        ELSEIF salario > v_izquierda AND (salario <= v_derecha OR ISNULL(v_derecha)) THEN
+        IF salario > v_izquierda AND (salario <= v_derecha OR ISNULL(v_derecha) = 1) THEN
 			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
             SET impuesto_total = impuesto_total + impuesto_linea;
 			select fin as contador, impuesto_linea as linea, impuesto_total as total;
@@ -52,7 +47,7 @@ BEGIN
 	  CLOSE rangos_cursor;
 END//
 
-CALL IMPRIMIR(5000000);
+CALL IMPRIMIR(8000000);
 DROP PROCEDURE IMPRIMIR
 
 
