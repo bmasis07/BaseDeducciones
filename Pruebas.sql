@@ -33,12 +33,12 @@ BEGIN
         IF salario > v_izquierda AND (salario <= v_derecha OR ISNULL(v_derecha) = 1) THEN
 			SET impuesto_linea = (salario - v_izquierda) * (v_porcentaje / 100);
             SET impuesto_total = impuesto_total + impuesto_linea;
-			select fin as contador, impuesto_linea as linea, impuesto_total as total;
+			select v_izquierda as izquierdo, v_derecha as derecho, impuesto_linea as impuesto_linea, impuesto_total as impuesto_acumulado;
             LEAVE get_rangos;
 		ELSEIF salario > v_derecha THEN
 			SET impuesto_linea = (v_derecha-v_izquierda) * (v_porcentaje / 100);
             SET impuesto_total = impuesto_total + impuesto_linea;
-			select fin as contador, impuesto_linea as linea, impuesto_total as total;
+			select v_izquierda as izquierdo, v_derecha as derecho, impuesto_linea as impuesto_linea, impuesto_total as impuesto_acumulado;
         END IF;
         
         
@@ -47,7 +47,7 @@ BEGIN
 	  CLOSE rangos_cursor;
 END//
 
-CALL IMPRIMIR(8000000);
+CALL IMPRIMIR(900000);
 DROP PROCEDURE IMPRIMIR
 
 
@@ -56,5 +56,10 @@ DROP PROCEDURE IMPRIMIR
 
 SELECT COUNT(*) FROM CALCULO_DEDUCCION;
 
+
+
+SELECT extremo_izquierdo, extremo_derecho, porcentaje
+FROM CONFIGURACION_RANGO_SALARIO_IMPUESTO_RENTA
+ORDER BY orden;
 
 
