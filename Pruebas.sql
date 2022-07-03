@@ -47,7 +47,7 @@ BEGIN
 	  CLOSE rangos_cursor;
 END//
 
-CALL IMPRIMIR(900000);
+CALL IMPRIMIR(1267001);
 DROP PROCEDURE IMPRIMIR
 
 
@@ -63,3 +63,14 @@ FROM CONFIGURACION_RANGO_SALARIO_IMPUESTO_RENTA
 ORDER BY orden;
 
 
+select * from valores_deduccion_patronal
+
+
+Select * from empleados
+where salario_actual > 4444950
+and salario_actual < 4445050
+order by salario_actual
+
+update empleados
+set salario_actual = 4445000
+where cedula = '108970377'
